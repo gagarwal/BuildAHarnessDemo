@@ -1,0 +1,6 @@
+# Node
+node_modules/
+
+# The harness generates its URL-shortener here at runtime (created on demand by
+# harness.ts). Everything inside is disposable and rebuilt on each run.
+harness-example-output/

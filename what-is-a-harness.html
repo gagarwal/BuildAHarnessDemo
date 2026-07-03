@@ -1,0 +1,1038 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What Is a Harness?</title>
+<style>
+  :root {
+    --bg: #15151f;
+    --panel: #20202e;
+    --panel-2: #1a1a26;
+    --ink: #ededf2;
+    --muted: #9494a8;
+    --line: #3a3a4c;
+    --accent: #a696ff;
+    --accent-strong: #8b7bf0;
+    --accent-bg: #2a2542;
+    --accent-border: #6e5dd0;
+    --good: #6ddf9f;
+    --bad: #ff9b8a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font: 20px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    overflow: hidden;
+  }
+  .deck { height: 100vh; width: 100vw; position: relative; }
+  .slide {
+    position: absolute; inset: 0;
+    padding: 7vh 9vw;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .slide.active { display: flex; }
+  .slide.top { justify-content: flex-start; padding-top: 5.5vh; }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.85em;
+    color: var(--muted);
+    margin-bottom: 0.8em;
+  }
+  h1 {
+    font-size: 4.3em;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-bottom: 0.15em;
+    line-height: 1.05;
+    color: #f6f6fb;
+  }
+  h2 {
+    font-size: 2.6em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5em;
+    line-height: 1.12;
+    color: #f6f6fb;
+  }
+  .subtitle { font-size: 1.4em; color: var(--muted); }
+  .lead { font-size: 1.3em; color: #c7c7d4; max-width: 82%; margin-bottom: 0.4em; }
+  ul {
+    list-style: none;
+    font-size: 1.18em;
+    max-width: 84%;
+  }
+  li {
+    margin-bottom: 0.55em;
+    padding-left: 1.1em;
+    position: relative;
+    color: #d7d7e1;
+  }
+  li::before {
+    content: "›";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  strong { color: #b9adff; font-weight: 600; }
+  a { color: var(--accent); text-decoration: none; }
+  code {
+    font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+    background: #2c2c3c;
+    color: #dcdce8;
+    padding: 0.05em 0.35em;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+  pre {
+    font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+    background: #0f0f18;
+    color: #e6e6ef;
+    border: 1px solid #26263a;
+    padding: 1em 1.4em;
+    border-radius: 8px;
+    margin-top: 0.9em;
+    font-size: 0.95em;
+    line-height: 1.5;
+    max-width: 84%;
+    overflow-x: auto;
+  }
+  pre.sm { font-size: 0.72em; line-height: 1.5; max-width: 94%; }
+  pre .c { color: #6f6f86; }
+  pre .k { color: #c792ea; }
+  pre .s { color: #c3e88d; }
+  pre .f { color: #82aaff; }
+  pre .n { color: #f78c6c; }
+
+  /* layout helpers */
+  .cols { display: flex; gap: 2.5em; max-width: 88%; }
+  .cols .col { flex: 1; }
+  .col h3 { font-size: 1.15em; margin-bottom: 0.5em; letter-spacing: -0.01em; color: var(--ink); }
+  .col ul { font-size: 1em; max-width: 100%; }
+
+  .card {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 1em 1.2em;
+  }
+  .card.bad  { border-color: #6e3b38; background: #271a1d; }
+  .card.good { border-color: #2f5e44; background: #172620; }
+  .card h3 { margin-bottom: 0.35em; }
+  .bad  h3 { color: var(--bad); }
+  .good h3 { color: var(--good); }
+  .bad  li::before { content: "✕"; color: var(--bad); font-weight: 600; }
+  .good li::before { content: "✓"; color: var(--good); font-weight: 600; }
+
+  .grid4 { display: grid; grid-template-columns: 1fr 1fr; gap: 1em 1.6em; max-width: 92%; margin-top: 0.3em; }
+  .grid4 .card { display: flex; align-items: center; gap: 1em; padding: 0.7em 1em; }
+  .grid4 .mini { flex: 0 0 38%; }
+  .grid4 .mini svg { width: 100%; height: auto; display: block; }
+  .grid4 .txt h3 { font-size: 1.05em; margin-bottom: 0.12em; letter-spacing: -0.01em; color: var(--ink); }
+  .grid4 .txt p { font-size: 0.82em; color: var(--muted); line-height: 1.35; }
+  .grid4 .txt .tag { font-size: 0.62em; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); font-weight: 700; }
+
+  .diagram { margin: 0.4em 0; }
+  .diagram svg { width: 100%; height: auto; display: block; }
+  .cap { font-size: 0.95em; color: var(--muted); margin-top: 0.6em; max-width: 84%; }
+  .ref { margin-top: 0.9em; font-size: 0.92em; color: var(--muted); }
+  .ref b { color: #b9adff; font-weight: 600; }
+
+  table { border-collapse: collapse; font-size: 1.02em; margin-top: 0.6em; max-width: 92%; }
+  th, td { text-align: left; padding: 0.5em 1.1em; border-bottom: 1px solid #2c2c3c; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.06em; }
+  td:first-child { color: #c4c4d2; font-weight: 600; }
+  .y { color: var(--good); font-weight: 600; }
+  .n2 { color: var(--bad); }
+  .quote {
+    font-size: 1.45em; line-height: 1.4; color: #e4e4ee;
+    border-left: 4px solid var(--accent); padding-left: 0.8em; max-width: 80%;
+    font-weight: 500;
+  }
+  .quote .who { display: block; font-size: 0.6em; color: var(--muted); font-weight: 400; margin-top: 0.7em; }
+  .step-no {
+    display: inline-block; background: var(--accent-strong); color: #fff;
+    font-size: 0.5em; font-weight: 700; border-radius: 999px;
+    padding: 0.15em 0.7em; vertical-align: middle; margin-right: 0.4em;
+    letter-spacing: 0.04em;
+  }
+
+  .nav, .footer {
+    position: fixed;
+    bottom: 1.2em;
+    color: #5a5a70;
+    font-size: 0.85em;
+    user-select: none;
+    font-feature-settings: "tnum";
+  }
+  .nav { right: 1.5em; }
+  .footer { left: 4.5em; }
+  .logo {
+    position: fixed;
+    top: 1.2em;
+    left: 1.5em;
+    width: 34px;
+    height: 34px;
+    user-select: none;
+    pointer-events: none;
+  }
+  /* shared SVG text defaults */
+  svg text { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; fill: var(--ink); }
+  .dlbl { font-size: 15px; font-weight: 600; }
+  .dsub { font-size: 12px; fill: var(--muted); }
+</style>
+</head>
+<body>
+  <svg class="logo" viewBox="-2 -2 84 84" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect x="0" y="0" width="80" height="80" rx="12" fill="#2a2a40"/>
+    <g transform="translate(13, 12)">
+      <line x1="-5" y1="8" x2="58" y2="8" stroke="#6e6e78" stroke-width="1"/>
+      <line x1="2" y1="27" x2="50" y2="27" stroke="#6e6e78" stroke-width="1"/>
+      <line x1="-4" y1="47" x2="55" y2="47" stroke="#6e6e78" stroke-width="1"/>
+      <line x1="10" y1="-3" x2="10" y2="56" stroke="#6e6e78" stroke-width="1"/>
+      <line x1="28" y1="1" x2="28" y2="54" stroke="#6e6e78" stroke-width="1"/>
+      <line x1="44" y1="-2" x2="44" y2="55" stroke="#6e6e78" stroke-width="1"/>
+      <path d="M28 27 Q36 27, 44 27" fill="none" stroke="#7B6BE0" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M10 8 Q18 5, 28 8" fill="none" stroke="#A898FF" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M10 27 Q18 24, 28 27" fill="none" stroke="#A898FF" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M10 47 Q7 38, 10 27" fill="none" stroke="#A898FF" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M28 8 Q36 10, 44 8" fill="none" stroke="#9688F0" stroke-width="2" stroke-linecap="round"/>
+      <path d="M28 47 Q36 44, 44 47" fill="none" stroke="#9688F0" stroke-width="2" stroke-linecap="round"/>
+      <path d="M10 47 Q18 43, 28 47" fill="none" stroke="#A898FF" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="44" cy="27" r="2.5" fill="#7B6BE0"/>
+      <circle cx="10" cy="8" r="5" fill="#A898FF"/>
+      <circle cx="44" cy="8" r="3.5" fill="#9688F0"/>
+      <circle cx="10" cy="27" r="5.5" fill="#A898FF"/>
+      <circle cx="28" cy="27" r="4" fill="#A898FF"/>
+      <circle cx="10" cy="47" r="5" fill="#A898FF"/>
+      <circle cx="44" cy="47" r="4" fill="#9688F0"/>
+      <circle cx="28" cy="8" r="3.5" fill="#9688F0"/>
+      <circle cx="28" cy="47" r="3.5" fill="#9688F0"/>
+    </g>
+  </svg>
+
+  <div class="deck">
+
+    <!-- 1 -->
+    <section class="slide active">
+      <p class="eyebrow">Agents &middot; Engineering</p>
+      <h1>What is a harness?</h1>
+      <p class="subtitle">From one-shot prompts to long-running agents.</p>
+    </section>
+
+    <!-- 2 -->
+    <section class="slide">
+      <p class="eyebrow">The arc</p>
+      <h2>Four ways to use a model</h2>
+      <div class="grid4">
+
+        <div class="card">
+          <div class="mini">
+            <svg viewBox="0 0 300 96" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs><marker id="m1" markerWidth="8" markerHeight="8" refX="6" refY="2.5" orient="auto"><path d="M0,0 L6,2.5 L0,5 Z" fill="#707088"/></marker></defs>
+              <rect x="6" y="34" width="78" height="30" rx="6" fill="#20202e" stroke="#3a3a4c" stroke-width="1.4"/><text x="45" y="53" text-anchor="middle" style="font-size:12px;">prompt</text>
+              <line x1="86" y1="49" x2="106" y2="49" stroke="#707088" stroke-width="1.8" marker-end="url(#m1)"/>
+              <rect x="110" y="34" width="78" height="30" rx="6" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.6"/><text x="149" y="53" text-anchor="middle" style="font-size:12px;">model</text>
+              <line x1="190" y1="49" x2="210" y2="49" stroke="#707088" stroke-width="1.8" marker-end="url(#m1)"/>
+              <rect x="214" y="34" width="80" height="30" rx="6" fill="#20202e" stroke="#3a3a4c" stroke-width="1.4"/><text x="254" y="53" text-anchor="middle" style="font-size:12px;">output</text>
+            </svg>
+          </div>
+          <div class="txt"><span class="tag">1 &middot; one-shot</span><h3>One-shot call</h3><p>One prompt in, one answer out. No memory, no tools, no second look.</p></div>
+        </div>
+
+        <div class="card">
+          <div class="mini">
+            <svg viewBox="0 0 300 96" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs><marker id="m2" markerWidth="8" markerHeight="8" refX="6" refY="2.5" orient="auto"><path d="M0,0 L6,2.5 L0,5 Z" fill="#707088"/></marker></defs>
+              <rect x="2"   y="34" width="56" height="30" rx="6" fill="#20202e" stroke="#3a3a4c" stroke-width="1.4"/><text x="30"  y="53" text-anchor="middle" style="font-size:11px;">in</text>
+              <line x1="60"  y1="49" x2="74"  y2="49" stroke="#707088" stroke-width="1.8" marker-end="url(#m2)"/>
+              <rect x="78"  y="34" width="50" height="30" rx="6" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.5"/><text x="103" y="53" text-anchor="middle" style="font-size:12px;">A</text>
+              <line x1="130" y1="49" x2="144" y2="49" stroke="#707088" stroke-width="1.8" marker-end="url(#m2)"/>
+              <rect x="148" y="34" width="50" height="30" rx="6" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.5"/><text x="173" y="53" text-anchor="middle" style="font-size:12px;">B</text>
+              <line x1="200" y1="49" x2="214" y2="49" stroke="#707088" stroke-width="1.8" marker-end="url(#m2)"/>
+              <rect x="218" y="34" width="78" height="30" rx="6" fill="#20202e" stroke="#3a3a4c" stroke-width="1.4"/><text x="257" y="53" text-anchor="middle" style="font-size:11px;">output</text>
+            </svg>
+          </div>
+          <div class="txt"><span class="tag">2 &middot; chain</span><h3>Prompt chain</h3><p>A fixed pipeline you wire by hand. Deterministic, but no feedback or recovery.</p></div>
+        </div>
+
+        <div class="card">
+          <div class="mini">
+            <svg viewBox="0 0 300 96" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs><marker id="m3" markerWidth="8" markerHeight="8" refX="6" refY="2.5" orient="auto"><path d="M0,0 L6,2.5 L0,5 Z" fill="#a696ff"/></marker></defs>
+              <rect x="6"   y="12" width="64" height="28" rx="6" fill="#20202e" stroke="#3a3a4c" stroke-width="1.4"/><text x="38" y="30" text-anchor="middle" style="font-size:11px;">prompt</text>
+              <line x1="72" y1="26" x2="96" y2="26" stroke="#707088" stroke-width="1.8" marker-end="url(#m3)"/>
+              <rect x="100" y="12" width="92" height="28" rx="6" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.6"/><text x="146" y="30" text-anchor="middle" style="font-size:12px;">model</text>
+              <rect x="100" y="62" width="92" height="26" rx="6" fill="#20202e" stroke="#3a3a4c" stroke-width="1.4"/><text x="146" y="79" text-anchor="middle" style="font-size:11px;">tool</text>
+              <path d="M120 40 Q108 51, 120 62" fill="none" stroke="#a696ff" stroke-width="1.8" marker-end="url(#m3)"/>
+              <path d="M172 62 Q184 51, 172 40" fill="none" stroke="#a696ff" stroke-width="1.8" marker-end="url(#m3)"/>
+              <line x1="192" y1="26" x2="218" y2="26" stroke="#6a6a80" stroke-width="1.6" stroke-dasharray="3 3" marker-end="url(#m3)"/>
+              <text x="244" y="30" text-anchor="middle" style="font-size:11px;" fill="#9494a8">done</text>
+            </svg>
+          </div>
+          <div class="txt"><span class="tag">3 &middot; agent loop</span><h3>Agent loop</h3><p>The model picks each next action, acts through a tool, observes, repeats until done.</p></div>
+        </div>
+
+        <div class="card">
+          <div class="mini">
+            <svg viewBox="0 0 300 96" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs><marker id="m4" markerWidth="8" markerHeight="8" refX="6" refY="2.5" orient="auto"><path d="M0,0 L6,2.5 L0,5 Z" fill="#a696ff"/></marker></defs>
+              <rect x="4" y="4" width="292" height="88" rx="10" fill="none" stroke="#4a4570" stroke-width="1.4" stroke-dasharray="5 4"/>
+              <rect x="40" y="16" width="86" height="26" rx="6" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.6"/><text x="83" y="33" text-anchor="middle" style="font-size:12px;">model</text>
+              <rect x="160" y="16" width="86" height="26" rx="6" fill="#20202e" stroke="#3a3a4c" stroke-width="1.4"/><text x="203" y="33" text-anchor="middle" style="font-size:11px;">tools</text>
+              <path d="M126 24 Q143 16, 160 24" fill="none" stroke="#a696ff" stroke-width="1.6" marker-end="url(#m4)"/>
+              <path d="M160 34 Q143 42, 126 34" fill="none" stroke="#a696ff" stroke-width="1.6" marker-end="url(#m4)"/>
+              <rect x="40" y="58" width="206" height="22" rx="5" fill="#2a2640" stroke="#4a4570"/><text x="143" y="73" text-anchor="middle" style="font-size:11px;" fill="#b9adff">durable state &middot; &#8635; reset</text>
+              <line x1="83" y1="42" x2="83" y2="58" stroke="#707088" stroke-width="1.4" marker-end="url(#m4)"/>
+            </svg>
+          </div>
+          <div class="txt"><span class="tag">4 &middot; harness</span><h3>Harness</h3><p>Scaffolding around the loop: tools, durable state, recovery. Runs across many windows.</p></div>
+        </div>
+
+      </div>
+      <p class="cap">Each step adds one thing the previous one could not do. This deck walks the whole arc, then you build a small harness yourself.</p>
+    </section>
+
+    <!-- 3 -->
+    <section class="slide">
+      <p class="eyebrow">The arc &middot; 1 of 4</p>
+      <h2>One-shot: a single pass</h2>
+      <div class="diagram">
+        <svg viewBox="0 0 760 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs><marker id="a3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#707088"/></marker></defs>
+          <rect x="20" y="35" width="180" height="56" rx="9" fill="#20202e" stroke="#3a3a4c" stroke-width="1.5"/>
+          <text class="dlbl" x="110" y="68" text-anchor="middle">Prompt</text>
+          <line x1="205" y1="63" x2="285" y2="63" stroke="#707088" stroke-width="2" marker-end="url(#a3)"/>
+          <rect x="290" y="35" width="180" height="56" rx="9" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.8"/>
+          <text class="dlbl" x="380" y="68" text-anchor="middle">Model</text>
+          <line x1="475" y1="63" x2="555" y2="63" stroke="#707088" stroke-width="2" marker-end="url(#a3)"/>
+          <rect x="560" y="35" width="180" height="56" rx="9" fill="#20202e" stroke="#3a3a4c" stroke-width="1.5"/>
+          <text class="dlbl" x="650" y="68" text-anchor="middle">Output</text>
+        </svg>
+      </div>
+      <div class="cols" style="margin-top:0.6em;">
+        <div class="col card good"><h3>Great for</h3><ul><li>Self-contained answers</li><li>Classify, extract, rewrite, summarize</li><li>Anything that fits in one window</li></ul></div>
+        <div class="col card bad"><h3>Falls over when</h3><ul><li>The task needs to touch the real world</li><li>It is bigger than one context window</li><li>The first attempt is wrong and nobody checks</li></ul></div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="slide">
+      <p class="eyebrow">The arc &middot; 2 of 4</p>
+      <h2>Prompt chaining: a fixed pipeline</h2>
+      <div class="diagram">
+        <svg viewBox="0 0 860 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs><marker id="a4" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#707088"/></marker></defs>
+          <rect x="10"  y="38" width="120" height="50" rx="9" fill="#20202e" stroke="#3a3a4c" stroke-width="1.5"/><text class="dlbl" x="70"  y="68" text-anchor="middle">Prompt</text>
+          <line x1="134" y1="63" x2="174" y2="63" stroke="#707088" stroke-width="2" marker-end="url(#a4)"/>
+          <rect x="178" y="38" width="120" height="50" rx="9" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.6"/><text class="dlbl" x="238" y="68" text-anchor="middle">Step A</text>
+          <line x1="302" y1="63" x2="342" y2="63" stroke="#707088" stroke-width="2" marker-end="url(#a4)"/>
+          <rect x="346" y="38" width="120" height="50" rx="9" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.6"/><text class="dlbl" x="406" y="68" text-anchor="middle">Step B</text>
+          <line x1="470" y1="63" x2="510" y2="63" stroke="#707088" stroke-width="2" marker-end="url(#a4)"/>
+          <rect x="514" y="38" width="120" height="50" rx="9" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.6"/><text class="dlbl" x="574" y="68" text-anchor="middle">Step C</text>
+          <line x1="638" y1="63" x2="678" y2="63" stroke="#707088" stroke-width="2" marker-end="url(#a4)"/>
+          <rect x="682" y="38" width="120" height="50" rx="9" fill="#20202e" stroke="#3a3a4c" stroke-width="1.5"/><text class="dlbl" x="742" y="68" text-anchor="middle">Output</text>
+        </svg>
+      </div>
+      <ul style="margin-top:0.4em;">
+        <li><strong>You</strong> decide every step in advance. The model never chooses what to do next.</li>
+        <li>Deterministic and easy to reason about, which is exactly why it is brittle.</li>
+        <li>No feedback loop: if Step B produced garbage, Step C runs on garbage anyway.</li>
+        <li>Works until the task stops being a straight line. Real work rarely is.</li>
+      </ul>
+    </section>
+
+    <!-- 5: the agent loop -->
+    <section class="slide">
+      <p class="eyebrow">The arc &middot; 3 of 4</p>
+      <h2>The agent loop: the model drives</h2>
+      <div class="diagram" style="max-width:82%;">
+        <svg viewBox="0 0 880 290" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs><marker id="al" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#a696ff"/></marker>
+            <marker id="alg" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#707088"/></marker></defs>
+          <rect x="250" y="18"  width="210" height="58" rx="10" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.8"/><text class="dlbl" x="355" y="44" text-anchor="middle">Model decides</text><text class="dsub" x="355" y="62" text-anchor="middle">picks the next action</text>
+          <rect x="540" y="122" width="200" height="58" rx="10" fill="#20202e" stroke="#3a3a4c" stroke-width="1.5"/><text class="dlbl" x="640" y="148" text-anchor="middle">Tool call</text><text class="dsub" x="640" y="166" text-anchor="middle">act</text>
+          <rect x="250" y="226" width="210" height="58" rx="10" fill="#20202e" stroke="#3a3a4c" stroke-width="1.5"/><text class="dlbl" x="355" y="252" text-anchor="middle">Environment</text><text class="dsub" x="355" y="270" text-anchor="middle">runs the action</text>
+          <rect x="20"  y="122" width="200" height="58" rx="10" fill="#20202e" stroke="#3a3a4c" stroke-width="1.5"/><text class="dlbl" x="120" y="148" text-anchor="middle">Observation</text><text class="dsub" x="120" y="166" text-anchor="middle">result back into context</text>
+          <path d="M460 58  Q580 66, 620 120"  fill="none" stroke="#a696ff" stroke-width="2" marker-end="url(#al)"/>
+          <path d="M640 180 Q580 238, 462 254" fill="none" stroke="#a696ff" stroke-width="2" marker-end="url(#al)"/>
+          <path d="M250 256 Q150 238, 120 180" fill="none" stroke="#a696ff" stroke-width="2" marker-end="url(#al)"/>
+          <path d="M120 122 Q150 66, 248 54"   fill="none" stroke="#a696ff" stroke-width="2" marker-end="url(#al)"/>
+          <line x1="460" y1="40" x2="690" y2="40" stroke="#707088" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#alg)"/>
+          <text class="dsub" x="540" y="30">done?</text>
+          <rect x="694" y="20" width="170" height="42" rx="9" fill="#172620" stroke="#2f5e44" stroke-width="1.5"/><text class="dlbl" x="779" y="40" text-anchor="middle" style="fill:#6ddf9f;">Output / stop</text><text class="dsub" x="779" y="56" text-anchor="middle">stop_reason: end</text>
+        </svg>
+      </div>
+      <ul style="font-size:1.04em;">
+        <li>Unlike a chain, the steps are <strong>not scripted</strong>. Each turn, the model chooses the next action.</li>
+        <li>It acts through a tool, the harness runs it, the result returns, and the model decides again, looping until it judges the task done.</li>
+        <li>That autonomy is the leap from "run my script" to "an agent." The loop is the engine, and it is also where long tasks go wrong.</li>
+      </ul>
+    </section>
+
+    <!-- 5b: what a harness actually is (details) -->
+    <section class="slide">
+      <p class="eyebrow">The arc &middot; 4 of 4</p>
+      <h2>What a harness actually is</h2>
+      <p class="lead" style="margin-bottom:0.9em;">Everything around the model that turns a single answer into sustained work. <strong>Agent = model + harness.</strong></p>
+      <div class="cols">
+        <div class="col">
+          <h3 style="color:#9bd6b0;">The agent at work</h3>
+          <ul>
+            <li><strong>The loop:</strong> the model picks an action, a tool runs it, the result returns, repeat.</li>
+            <li><strong>Tools:</strong> how it touches the world: files, shell, browser, MCP.</li>
+            <li><strong>Context &amp; memory:</strong> durable state (git, progress file, session log) plus resets.</li>
+          </ul>
+        </div>
+        <div class="col">
+          <h3 style="color:#e6b1a0;">The control around it</h3>
+          <ul>
+            <li><strong>Guides</strong> (feed-forward): prompts, specs, conventions that steer before it acts.</li>
+            <li><strong>Sensors</strong> (feedback): tests, linters, evaluators that correct after it acts.</li>
+            <li><strong>Recovery:</strong> retries, resets, <code>wake()</code> from a durable log, sub-agents.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="cap">None of this is the model. It is the scaffolding that makes the model dependable. Next: how it fits together.</p>
+    </section>
+
+    <!-- 6: harness = scaffolding (improved, detailed) -->
+    <section class="slide">
+      <p class="eyebrow">Definition &middot; the shape</p>
+      <h2>A harness is the scaffolding around the loop</h2>
+      <div class="diagram" style="max-width:86%;">
+        <svg viewBox="0 0 960 312" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <marker id="aug" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#a696ff"/></marker>
+            <marker id="augr" markerWidth="9" markerHeight="9" refX="2" refY="3" orient="auto"><path d="M7,0 L0,3 L7,6 Z" fill="#a696ff"/></marker>
+          </defs>
+          <!-- harness boundary: everything except the model is the harness -->
+          <rect x="28" y="16" width="904" height="284" rx="18" fill="#1b1929" stroke="#6e5dd0" stroke-width="1.8" stroke-dasharray="9 7"/>
+          <text x="52" y="44" fill="#9b8fe0" style="font-size:14px;font-weight:700;letter-spacing:.1em;">HARNESS</text>
+          <text x="908" y="44" text-anchor="end" fill="#6f6f86" style="font-size:13px;">agent = model + harness</text>
+
+          <!-- request in -> model -> response out -->
+          <text class="dsub" x="250" y="80" text-anchor="middle">request</text>
+          <path d="M140 92 L384 92" stroke="#707088" stroke-width="2" marker-end="url(#aug)"/>
+          <rect x="388" y="58" width="184" height="68" rx="12" fill="#2a2542" stroke="#a696ff" stroke-width="2"/>
+          <text class="dlbl" x="480" y="90" text-anchor="middle">Model</text>
+          <text class="dsub" x="480" y="110" text-anchor="middle">weights stay fixed</text>
+          <text class="dsub" x="712" y="80" text-anchor="middle">response</text>
+          <path d="M576 92 L862 92" stroke="#707088" stroke-width="2" marker-end="url(#aug)"/>
+
+          <!-- the harness augments the model: bidirectional links -->
+          <path d="M420 126 L168 184" stroke="#a696ff" stroke-width="1.8" marker-start="url(#augr)" marker-end="url(#aug)"/>
+          <path d="M452 126 L366 184" stroke="#a696ff" stroke-width="1.8" marker-start="url(#augr)" marker-end="url(#aug)"/>
+          <path d="M512 126 L576 184" stroke="#a696ff" stroke-width="1.8" marker-start="url(#augr)" marker-end="url(#aug)"/>
+          <path d="M544 126 L796 184" stroke="#a696ff" stroke-width="1.8" marker-start="url(#augr)" marker-end="url(#aug)"/>
+
+          <rect x="44"  y="186" width="210" height="86" rx="10" fill="#20202e" stroke="#3a3a4c"/><text class="dlbl" x="149" y="214" text-anchor="middle" style="fill:#9bd6b0;">Guides</text><text class="dsub" x="149" y="236" text-anchor="middle">prompts &middot; specs</text><text class="dsub" x="149" y="256" text-anchor="middle">steer before it acts</text>
+          <rect x="274" y="186" width="180" height="86" rx="10" fill="#20202e" stroke="#3a3a4c"/><text class="dlbl" x="364" y="214" text-anchor="middle">Tools</text><text class="dsub" x="364" y="236" text-anchor="middle">files &middot; shell &middot; browser</text><text class="dsub" x="364" y="256" text-anchor="middle">act &#8644; observe</text>
+          <rect x="474" y="186" width="204" height="86" rx="10" fill="#20202e" stroke="#3a3a4c"/><text class="dlbl" x="576" y="214" text-anchor="middle">Context &amp; memory</text><text class="dsub" x="576" y="236" text-anchor="middle">git &middot; progress &middot; session log</text><text class="dsub" x="576" y="256" text-anchor="middle">resets / handoff</text>
+          <rect x="698" y="186" width="218" height="86" rx="10" fill="#20202e" stroke="#3a3a4c"/><text class="dlbl" x="807" y="214" text-anchor="middle" style="fill:#e6b1a0;">Sensors</text><text class="dsub" x="807" y="236" text-anchor="middle">tests &middot; linters &middot; evaluator</text><text class="dsub" x="807" y="256" text-anchor="middle">correct after it acts</text>
+        </svg>
+      </div>
+      <p class="lead">The model stays the same. The <strong>harness is everything around it</strong>: guides that steer before, sensors that correct after, durable context, and the tools it acts through.</p>
+      <p class="ref"><b>Read more:</b> <a>martinfowler.com/articles/harness-engineering.html</a> &middot; <a>openai.com/index/harness-engineering</a></p>
+    </section>
+
+    <!-- 7 -->
+    <section class="slide">
+      <p class="eyebrow">Why scaffolding &middot; 1</p>
+      <h2>The real constraint: the context window is finite</h2>
+      <div class="diagram">
+        <svg viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <line x1="40" y1="20" x2="780" y2="20" stroke="#ff7a68" stroke-width="2" stroke-dasharray="6 5"/>
+          <text class="dsub" x="780" y="15" text-anchor="end" fill="#ff7a68" style="font-weight:700;">context limit</text>
+          <g>
+            <rect x="120" y="120" width="120" height="78" rx="6" fill="#2a2640" stroke="#4a4570"/>
+            <rect x="120" y="150" width="120" height="48" fill="#b9a9f5"/>
+            <text class="dsub" x="180" y="216" text-anchor="middle">turn 5</text>
+          </g>
+          <g>
+            <rect x="350" y="70" width="120" height="128" rx="6" fill="#2a2640" stroke="#4a4570"/>
+            <rect x="350" y="120" width="120" height="78" fill="#9d86f0"/>
+            <text class="dsub" x="410" y="216" text-anchor="middle">turn 25</text>
+          </g>
+          <g>
+            <rect x="580" y="28" width="120" height="170" rx="6" fill="#2a2640" stroke="#4a4570"/>
+            <rect x="580" y="46" width="120" height="152" fill="#7b6be0"/>
+            <text class="dsub" x="640" y="216" text-anchor="middle">turn 60</text>
+          </g>
+        </svg>
+      </div>
+      <p class="lead">Every tool result, file, and reasoning step accumulates in the window. On a long task it fills up. What the model does as it approaches the limit is the whole game.</p>
+    </section>
+
+    <!-- 8 -->
+    <section class="slide">
+      <p class="eyebrow">Why scaffolding &middot; 2</p>
+      <h2>Two failure modes near the limit</h2>
+      <div class="cols">
+        <div class="col card bad">
+          <h3>Over-ambition</h3>
+          <ul>
+            <li>Tries to finish the entire project in one window</li>
+            <li>Runs out of context mid-build</li>
+            <li>Leaves half-implemented features and broken state</li>
+          </ul>
+        </div>
+        <div class="col card bad">
+          <h3>Premature completion</h3>
+          <ul>
+            <li>A fresh session declares the work "done"</li>
+            <li>It cannot see what is actually missing</li>
+            <li>Real functionality is still absent</li>
+          </ul>
+        </div>
+      </div>
+      <p class="quote" style="margin-top:1em;">Models show "context anxiety": as the window fills, they rush to wrap up.
+        <span class="who">Anthropic, Harness design for long-running apps</span></p>
+    </section>
+
+    <!-- 9 -->
+    <section class="slide">
+      <p class="eyebrow">Why scaffolding &middot; 3</p>
+      <h2>Reset beats compaction</h2>
+      <div class="diagram" style="max-width:80%;">
+        <svg viewBox="0 0 860 210" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs><marker id="a9" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#707088"/></marker></defs>
+          <text class="dlbl" x="20" y="54">Compaction</text>
+          <rect x="190" y="28" width="120" height="44" rx="6" fill="#9d86f0"/><text x="250" y="55" text-anchor="middle" fill="#15151f" style="font-size:12px;font-weight:600;">full</text>
+          <line x1="314" y1="50" x2="348" y2="50" stroke="#707088" stroke-width="2" marker-end="url(#a9)"/>
+          <rect x="352" y="28" width="82" height="44" rx="6" fill="#6a5aa8"/><text x="393" y="55" text-anchor="middle" fill="#ededf2" style="font-size:11px;">squashed</text>
+          <line x1="438" y1="50" x2="472" y2="50" stroke="#707088" stroke-width="2" marker-end="url(#a9)"/>
+          <rect x="476" y="28" width="120" height="44" rx="6" fill="#9d86f0"/><text x="536" y="55" text-anchor="middle" fill="#15151f" style="font-size:12px;font-weight:600;">full again</text>
+          <line x1="600" y1="50" x2="634" y2="50" stroke="#707088" stroke-width="2" marker-end="url(#a9)"/>
+          <rect x="638" y="28" width="82" height="44" rx="6" fill="#6a5aa8"/><text x="679" y="55" text-anchor="middle" fill="#ededf2" style="font-size:11px;">squashed</text>
+          <text class="dsub" x="190" y="92" fill="#ff9b8a">continuous, lossy: detail drifts away each pass</text>
+
+          <line x1="20" y1="112" x2="840" y2="112" stroke="#2c2c3c" stroke-width="1"/>
+
+          <text class="dlbl" x="20" y="166">Reset</text>
+          <rect x="190" y="140" width="120" height="44" rx="6" fill="#9d86f0"/><text x="250" y="167" text-anchor="middle" fill="#15151f" style="font-size:12px;font-weight:600;">full</text>
+          <line x1="314" y1="162" x2="356" y2="162" stroke="#a696ff" stroke-width="2" marker-end="url(#a9)"/>
+          <rect x="360" y="140" width="190" height="44" rx="6" fill="#20202e" stroke="#8b7bf0" stroke-width="1.6"/><text x="455" y="167" text-anchor="middle" style="font-size:12px;">handoff file (on disk)</text>
+          <line x1="554" y1="162" x2="596" y2="162" stroke="#a696ff" stroke-width="2" marker-end="url(#a9)"/>
+          <rect x="600" y="140" width="130" height="44" rx="6" fill="#2a2640" stroke="#8b7bf0" stroke-width="1.6"/><text x="665" y="167" text-anchor="middle" style="font-size:12px;">clean slate</text>
+          <text class="dsub" x="190" y="206" fill="#6ddf9f">fresh window, state reloaded from disk, nothing lost</text>
+        </svg>
+      </div>
+      <ul style="margin-top:0.2em;font-size:1.02em;">
+        <li><strong>Compaction</strong> keeps continuity but never gives a clean slate, and detail erodes each pass.</li>
+        <li><strong>Reset</strong> clears the window and rebuilds from a durable handoff, so the agent starts sharp every session.</li>
+        <li>This mattered a lot for older models and less for newer ones. Re-test your assumptions as models improve.</li>
+      </ul>
+    </section>
+
+    <!-- 10: Pattern A -->
+    <section class="slide">
+      <p class="eyebrow">Harness anatomy &middot; Pattern A</p>
+      <h2>Initializer + coder</h2>
+      <div class="diagram" style="max-width:90%;">
+        <svg viewBox="0 0 940 278" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs><marker id="pa" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#a696ff"/></marker>
+            <marker id="pag" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#707088"/></marker></defs>
+
+          <!-- session 0 -->
+          <rect x="20" y="86" width="200" height="78" rx="10" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.8"/>
+          <text class="dlbl" x="120" y="118" text-anchor="middle">Session 0</text>
+          <text class="dsub" x="120" y="138" text-anchor="middle">Initializer, runs once</text>
+          <text class="dsub" x="120" y="154" text-anchor="middle">writes the spec + scaffolding</text>
+
+          <!-- durable store in the middle -->
+          <rect x="370" y="40" width="200" height="170" rx="12" fill="#1a1a26" stroke="#4a4570" stroke-width="1.6"/>
+          <text class="dlbl" x="470" y="66" text-anchor="middle">Durable state</text>
+          <rect x="392" y="80"  width="156" height="26" rx="5" fill="#20202e" stroke="#3a3a4c"/><text class="dsub" x="470" y="97"  text-anchor="middle">spec.json (the features)</text>
+          <rect x="392" y="112" width="156" height="26" rx="5" fill="#20202e" stroke="#3a3a4c"/><text class="dsub" x="470" y="129" text-anchor="middle">progress.json</text>
+          <rect x="392" y="144" width="156" height="26" rx="5" fill="#20202e" stroke="#3a3a4c"/><text class="dsub" x="470" y="161" text-anchor="middle">git history</text>
+          <rect x="392" y="176" width="156" height="26" rx="5" fill="#20202e" stroke="#3a3a4c"/><text class="dsub" x="470" y="193" text-anchor="middle">init.sh</text>
+
+          <!-- coder sessions -->
+          <rect x="720" y="86" width="200" height="78" rx="10" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.8"/>
+          <text class="dlbl" x="820" y="114" text-anchor="middle">Sessions 1..N</text>
+          <text class="dsub" x="820" y="134" text-anchor="middle">read state &rarr; ONE feature</text>
+          <text class="dsub" x="820" y="150" text-anchor="middle">test &rarr; commit &rarr; mark done</text>
+
+          <path d="M220 116 L364 116" stroke="#a696ff" stroke-width="2" marker-end="url(#pa)"/><text class="dsub" x="292" y="106" text-anchor="middle">writes</text>
+          <path d="M720 110 L576 110" stroke="#a696ff" stroke-width="2" marker-end="url(#pa)"/><text class="dsub" x="648" y="100" text-anchor="middle">reads</text>
+          <path d="M576 150 L716 150" stroke="#707088" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#pag)"/><text class="dsub" x="648" y="168" text-anchor="middle">commits back</text>
+          <path d="M820 164 Q820 250, 470 250 L470 214" fill="none" stroke="#707088" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#pag)"/>
+          <text class="dsub" x="500" y="272" text-anchor="middle">&#8635; each session resumes from disk, one feature at a time</text>
+        </svg>
+      </div>
+      <ul style="font-size:1.0em;">
+        <li>One agent <strong>initializes</strong> the durable artifacts once. Every later session is a <strong>coder</strong> that resumes from them.</li>
+        <li>The discipline that prevents the two failure modes: <strong>one feature per session</strong>, tested end to end, then committed. Git is the source of truth.</li>
+      </ul>
+      <p class="ref"><b>Read more:</b> <a>anthropic.com/engineering/effective-harnesses-for-long-running-agents</a></p>
+    </section>
+
+    <!-- 11: Pattern B -->
+    <section class="slide">
+      <p class="eyebrow">Harness anatomy &middot; Pattern B</p>
+      <h2>Planner &rarr; generator &rarr; evaluator</h2>
+      <div class="diagram" style="max-width:92%;">
+        <svg viewBox="0 0 940 240" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs><marker id="pb" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#a696ff"/></marker>
+            <marker id="pbr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#e6b1a0"/></marker>
+            <marker id="pbg" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6ddf9f"/></marker></defs>
+
+          <rect x="20"  y="28" width="200" height="84" rx="10" fill="#20202e" stroke="#3a3a4c" stroke-width="1.6"/><text class="dlbl" x="120" y="58" text-anchor="middle">Planner</text><text class="dsub" x="120" y="78" text-anchor="middle">prompt &rarr; detailed spec</text><text class="dsub" x="120" y="94" text-anchor="middle">scope, not implementation</text>
+          <rect x="370" y="28" width="200" height="84" rx="10" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.8"/><text class="dlbl" x="470" y="58" text-anchor="middle">Generator</text><text class="dsub" x="470" y="78" text-anchor="middle">builds against the spec</text><text class="dsub" x="470" y="94" text-anchor="middle">the worker loop</text>
+          <rect x="720" y="28" width="200" height="84" rx="10" fill="#20202e" stroke="#3a3a4c" stroke-width="1.6"/><text class="dlbl" x="820" y="54" text-anchor="middle">Evaluator</text><text class="dsub" x="820" y="73" text-anchor="middle">drives the live app, grades</text><text class="dsub" x="820" y="91" text-anchor="middle">functionality &middot; craft &middot; design</text>
+
+          <path d="M220 70 L364 70" stroke="#a696ff" stroke-width="2" marker-end="url(#pb)"/>
+          <path d="M570 70 L714 70" stroke="#a696ff" stroke-width="2" marker-end="url(#pb)"/>
+
+          <!-- pass outcome -->
+          <line x1="850" y1="112" x2="850" y2="150" stroke="#6ddf9f" stroke-width="2" marker-end="url(#pbg)"/>
+          <rect x="762" y="152" width="170" height="40" rx="9" fill="#172620" stroke="#2f5e44" stroke-width="1.5"/><text class="dlbl" x="847" y="177" text-anchor="middle" style="fill:#6ddf9f;">pass &rarr; ship</text>
+
+          <!-- fail feedback loop -->
+          <path d="M730 112 Q470 210, 472 114" fill="none" stroke="#e6b1a0" stroke-width="2" marker-end="url(#pbr)"/>
+          <text class="dsub" x="430" y="206" text-anchor="middle" style="fill:#e6b1a0;">fail &rarr; gaps reopen as new features</text>
+        </svg>
+      </div>
+      <ul style="font-size:1.0em;">
+        <li><strong>Separation of concerns.</strong> An independent evaluator catches what a self-grading generator talks itself past.</li>
+        <li>Evidence of the payoff: a retro-game build went from <strong>20 min / $9 / broken</strong> solo to <strong>6 hr / $200 / playable</strong> under the full loop.</li>
+      </ul>
+      <p class="ref"><b>Read more:</b> <a>anthropic.com/engineering/harness-design-long-running-apps</a></p>
+    </section>
+
+    <!-- 12: Pattern C -->
+    <section class="slide">
+      <p class="eyebrow">Harness anatomy &middot; Pattern C</p>
+      <h2>Managed agents: brain, state, hands</h2>
+      <div class="diagram" style="max-width:90%;">
+        <svg viewBox="0 0 960 312" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs><marker id="pc" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#a696ff"/></marker></defs>
+
+          <!-- Session: append-only log across the top (durable source of truth) -->
+          <rect x="40" y="14" width="880" height="92" rx="12" fill="#1a1a26" stroke="#6e5dd0" stroke-width="1.8"/>
+          <text class="dlbl" x="480" y="36" text-anchor="middle">Session</text>
+          <rect x="300" y="48" width="60"  height="28" rx="5" fill="#20202e" stroke="#3a3a4c"/><text class="dsub" x="330" y="66" text-anchor="middle">user</text>
+          <rect x="366" y="48" width="86"  height="28" rx="5" fill="#20202e" stroke="#3a3a4c"/><text class="dsub" x="409" y="66" text-anchor="middle">tool_use</text>
+          <rect x="458" y="48" width="100" height="28" rx="5" fill="#20202e" stroke="#3a3a4c"/><text class="dsub" x="508" y="66" text-anchor="middle">tool_result</text>
+          <rect x="564" y="48" width="60"  height="28" rx="5" fill="#20202e" stroke="#3a3a4c"/><text class="dsub" x="594" y="66" text-anchor="middle">text</text>
+          <text class="dsub" x="638" y="66">&#8230;</text>
+          <text class="dsub" x="480" y="96" text-anchor="middle">append-only event log &middot; durable source of truth</text>
+
+          <!-- Brain: stateless, restartable -->
+          <rect x="80" y="182" width="300" height="118" rx="12" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.8"/>
+          <text class="dlbl" x="230" y="220" text-anchor="middle">Brain</text>
+          <text class="dsub" x="230" y="244" text-anchor="middle">Claude + harness</text>
+          <text class="dsub" x="230" y="266" text-anchor="middle">stateless &middot; restartable</text>
+
+          <!-- Hands: swappable sandbox stack -->
+          <rect x="596" y="194" width="284" height="106" rx="12" fill="#242433" stroke="#3a3a4c"/>
+          <rect x="588" y="186" width="284" height="106" rx="12" fill="#242433" stroke="#3a3a4c"/>
+          <rect x="580" y="178" width="284" height="106" rx="12" fill="#20202e" stroke="#3a3a4c" stroke-width="1.6"/>
+          <text class="dlbl" x="722" y="214" text-anchor="middle">Hands</text>
+          <text class="dsub" x="722" y="238" text-anchor="middle">sandbox &middot; tools</text>
+          <text class="dsub" x="722" y="260" text-anchor="middle">swappable: container &middot; phone &middot; VM</text>
+
+          <!-- Brain <-> Session: two straight vertical channels -->
+          <path d="M170 182 L170 110" stroke="#a696ff" stroke-width="2" marker-end="url(#pc)"/><text class="dsub" x="158" y="150" text-anchor="end">emitEvent(id, event)</text>
+          <path d="M300 110 L300 182" stroke="#a696ff" stroke-width="2" marker-end="url(#pc)"/><text class="dsub" x="312" y="150">getEvents() &middot; wake()</text>
+
+          <!-- Brain <-> Hands -->
+          <text class="dsub" x="480" y="200" text-anchor="middle">execute(name, input)</text>
+          <text class="dsub" x="480" y="216" text-anchor="middle">provision({ resources })</text>
+          <path d="M380 228 L578 228" stroke="#a696ff" stroke-width="2" marker-end="url(#pc)"/>
+          <path d="M578 258 L382 258" stroke="#a696ff" stroke-width="2" marker-end="url(#pc)"/><text class="dsub" x="480" y="276" text-anchor="middle">&rarr; string (result / error)</text>
+        </svg>
+      </div>
+      <ul style="font-size:1.0em;">
+        <li>Decouple the three. A crashed brain restarts with <code>wake(sessionId)</code>; a dead container is just a tool error the brain handles.</li>
+        <li>State lives <strong>outside</strong> the window (<code>getEvents()</code>), secrets never reach the sandbox, and skipping needless provisioning cut time-to-first-token ~60% at p50.</li>
+      </ul>
+      <p class="ref"><b>Read more:</b> <a>anthropic.com/engineering/managed-agents</a></p>
+    </section>
+
+    <!-- 13 -->
+    <section class="slide">
+      <p class="eyebrow">The load-bearing idea</p>
+      <h2>A harness encodes what the model can't yet do</h2>
+      <p class="quote">"Every component in a harness encodes an assumption about what the model can't do on its own, and those assumptions are worth stress testing."
+        <span class="who">Anthropic, Harness design for long-running apps</span></p>
+      <ul style="margin-top:1em;">
+        <li>Sprint decomposition, context resets, hand-holding prompts: each is a workaround for a current limitation.</li>
+        <li>As models improve, <strong>strip</strong> the harness down. Anthropic removed reset logic once a newer model stopped needing it.</li>
+        <li>Fowler's framing: the steering loop. When an issue recurs, add a <strong>guide</strong> (before) or a <strong>sensor</strong> (after) so it cannot recur, and remove the ones the model outgrows.</li>
+      </ul>
+    </section>
+
+    <!-- 14 -->
+    <section class="slide">
+      <p class="eyebrow">Decision &middot; compare</p>
+      <h2>One-shot vs chain vs harness</h2>
+      <table>
+        <tr><th></th><th>One-shot</th><th>Prompt chain</th><th>Harness</th></tr>
+        <tr><td>Who picks next step</td><td>n/a</td><td>You, in advance</td><td class="y">The model, at runtime</td></tr>
+        <tr><td>Tools / real world</td><td class="n2">No</td><td>Sometimes</td><td class="y">Yes</td></tr>
+        <tr><td>Feedback loop</td><td class="n2">No</td><td class="n2">No</td><td class="y">Yes</td></tr>
+        <tr><td>Survives a crash / reset</td><td class="n2">No</td><td class="n2">No</td><td class="y">Yes, from durable state</td></tr>
+        <tr><td>Spans many windows</td><td class="n2">No</td><td class="n2">No</td><td class="y">Yes</td></tr>
+        <tr><td>Cost &amp; latency</td><td class="y">Lowest</td><td>Low</td><td class="n2">Highest</td></tr>
+        <tr><td>Best fit</td><td>Single answers</td><td>Fixed pipelines</td><td>Open-ended, long tasks</td></tr>
+      </table>
+    </section>
+
+    <!-- 15 -->
+    <section class="slide">
+      <p class="eyebrow">Decision &middot; restraint</p>
+      <h2>When NOT to build a harness</h2>
+      <ul>
+        <li>The task fits in one window and one pass. A harness just adds latency and cost.</li>
+        <li>The cost tax is real: the same job was <strong>$9 and 20 minutes</strong> solo versus <strong>$200 and 6 hours</strong> under a full harness.</li>
+        <li>Reach for a harness when the work is <strong>long, open-ended, and must touch real systems</strong>, where being correct beats being cheap.</li>
+        <li>Start with the smallest loop that works. Add a planner or evaluator only when you can point to the failure it fixes.</li>
+      </ul>
+    </section>
+
+    <!-- 16 -->
+    <section class="slide">
+      <p class="eyebrow">Recap</p>
+      <h2>The story so far</h2>
+      <ul>
+        <li>One-shot and chains hit a wall: no memory, no tools, no feedback, no recovery.</li>
+        <li>A harness wraps the agent <strong>loop</strong> with <strong>guides, sensors, durable context, and tools</strong>.</li>
+        <li>It exists to beat two failure modes: over-ambition and premature completion, both driven by the finite window.</li>
+        <li>Three proven shapes: initializer + coder, planner / generator / evaluator, managed brain / state / hands.</li>
+        <li>Keep it minimal and re-test it as models improve. Now let's build one.</li>
+      </ul>
+    </section>
+
+    <!-- 17: tutorial intro -->
+    <section class="slide top">
+      <p class="eyebrow">Hands-on tutorial</p>
+      <h1>Build a real harness</h1>
+      <p class="subtitle">TypeScript &middot; 8 steps &middot; ~140 lines, all of it shown.</p>
+      <div class="cols" style="margin-top:1.1em;">
+        <div class="col">
+          <ul style="font-size:1.0em;">
+            <li><strong>The harness</strong> (what you write): a loop in TS that drives Claude.</li>
+            <li><strong>The task it builds:</strong> a tiny URL-shortener HTTP service (no frameworks).</li>
+            <li><strong>You need:</strong> Node 20+, <code>npm i @anthropic-ai/sdk</code>, <code>ANTHROPIC_API_KEY</code>, <code>git</code>.</li>
+          </ul>
+        </div>
+        <div class="col">
+<pre class="sm"><span class="c">project/</span>
+  harness.ts      <span class="c"># the harness (you write this)</span>
+  progress.json   <span class="c"># spec + state (seeded on run 1)</span>
+  <span class="c"># everything below is built BY the agent:</span>
+  server.js       <span class="c"># the URL shortener</span>
+  store.json      <span class="c"># its persisted data</span></pre>
+        </div>
+      </div>
+      <p class="cap">Every function named in these slides is defined in these slides. Nothing hand-waved.</p>
+    </section>
+
+    <!-- 17b: what we're building -->
+    <section class="slide top">
+      <p class="eyebrow">Hands-on tutorial</p>
+      <h2>What we're building</h2>
+      <p class="lead" style="margin-bottom:0.5em;">You write the harness. Claude, driven by it, builds the app, and a second Claude grades it.</p>
+      <div class="diagram" style="max-width:94%;">
+        <svg viewBox="0 0 980 210" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs><marker id="wb" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#a696ff"/></marker>
+            <marker id="wbo" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#e6b1a0"/></marker></defs>
+
+          <rect x="8"   y="34" width="180" height="76" rx="10" fill="#2a2542" stroke="#8b7bf0" stroke-width="1.8"/><text class="dlbl" x="98" y="66" text-anchor="middle">harness.ts</text><text class="dsub" x="98" y="86" text-anchor="middle">you write this</text>
+          <rect x="262" y="34" width="180" height="76" rx="10" fill="#20202e" stroke="#3a3a4c" stroke-width="1.6"/><text class="dlbl" x="352" y="60" text-anchor="middle">Worker</text><text class="dsub" x="352" y="79" text-anchor="middle">Claude &middot; loop + tools</text><text class="dsub" x="352" y="96" text-anchor="middle">builds the app</text>
+          <rect x="516" y="34" width="200" height="76" rx="10" fill="#172620" stroke="#2f5e44" stroke-width="1.6"/><text class="dlbl" x="616" y="60" text-anchor="middle" style="fill:#6ddf9f;">server.js + store.json</text><text class="dsub" x="616" y="80" text-anchor="middle">the URL shortener</text><text class="dsub" x="616" y="97" text-anchor="middle">what the agent produces</text>
+          <rect x="790" y="34" width="180" height="76" rx="10" fill="#20202e" stroke="#3a3a4c" stroke-width="1.6"/><text class="dlbl" x="880" y="60" text-anchor="middle">Evaluator</text><text class="dsub" x="880" y="79" text-anchor="middle">Claude &middot; grades</text><text class="dsub" x="880" y="96" text-anchor="middle">probes the app</text>
+
+          <path d="M188 72 L258 72" stroke="#a696ff" stroke-width="2" marker-end="url(#wb)"/><text class="dsub" x="223" y="62" text-anchor="middle">drives</text>
+          <path d="M442 72 L512 72" stroke="#a696ff" stroke-width="2" marker-end="url(#wb)"/><text class="dsub" x="477" y="62" text-anchor="middle">writes</text>
+          <path d="M716 72 L786 72" stroke="#a696ff" stroke-width="2" marker-end="url(#wb)"/><text class="dsub" x="751" y="62" text-anchor="middle">probes</text>
+
+          <!-- durable state -->
+          <rect x="262" y="150" width="454" height="40" rx="8" fill="#1a1a26" stroke="#6e5dd0" stroke-width="1.5"/><text class="dsub" x="489" y="175" text-anchor="middle">progress.json + git &nbsp;&middot;&nbsp; durable state, survives every reset</text>
+          <path d="M330 110 L330 148" stroke="#a696ff" stroke-width="1.8" marker-end="url(#wb)"/><text class="dsub" x="306" y="132" text-anchor="end">commit</text>
+          <path d="M384 148 L384 110" stroke="#a696ff" stroke-width="1.8" marker-end="url(#wb)"/><text class="dsub" x="398" y="132">read</text>
+          <!-- evaluator feedback -->
+          <path d="M880 110 Q880 170 718 170" fill="none" stroke="#e6b1a0" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#wbo)"/><text class="dsub" x="812" y="186" text-anchor="middle" style="fill:#e6b1a0;">fail &rarr; reopen gaps</text>
+        </svg>
+      </div>
+      <div class="cols" style="margin-top:0.3em;">
+        <div class="col">
+          <h3 style="color:#b9adff;">The harness (you write)</h3>
+          <ul style="font-size:0.95em;"><li>~140 lines of TS: the loop, 5 tools, <code>progress.json</code> + git state, context reset, an evaluator.</li></ul>
+        </div>
+        <div class="col">
+          <h3 style="color:#6ddf9f;">Definition of done (the app)</h3>
+          <ul style="font-size:0.95em;"><li><code>POST /shorten</code> &rarr; short code, <code>GET /:code</code> &rarr; 302 redirect, persisted to <code>store.json</code>, 404/400 on bad input.</li></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 18: step 1 helpers -->
+    <section class="slide top">
+      <p class="eyebrow">Tutorial</p>
+      <h2><span class="step-no">STEP 1</span> Setup and helpers</h2>
+      <p class="cap">Two tiny utilities the rest of the harness leans on: a shell runner that never throws, and a text extractor.</p>
+<pre class="sm"><span class="k">import</span> Anthropic <span class="k">from</span> <span class="s">"@anthropic-ai/sdk"</span>;
+<span class="k">import</span> { readFileSync, writeFileSync, existsSync } <span class="k">from</span> <span class="s">"node:fs"</span>;
+<span class="k">import</span> { execSync } <span class="k">from</span> <span class="s">"node:child_process"</span>;
+
+<span class="k">const</span> client = <span class="k">new</span> Anthropic();              <span class="c">// reads ANTHROPIC_API_KEY</span>
+<span class="k">const</span> MODEL = <span class="s">"claude-opus-4-8"</span>;
+
+<span class="c">// run a shell command; capture output instead of crashing on non-zero exit</span>
+<span class="k">const</span> <span class="f">sh</span> = (cmd: <span class="k">string</span>): <span class="k">string</span> =&gt; {
+  <span class="k">try</span> { <span class="k">return</span> execSync(cmd, { encoding: <span class="s">"utf8"</span>, stdio: [<span class="s">"ignore"</span>, <span class="s">"pipe"</span>, <span class="s">"pipe"</span>] }); }
+  <span class="k">catch</span> (e: <span class="k">any</span>) { <span class="k">return</span> <span class="s">`ERROR: ${e.stdout ?? <span class="s">""</span>}${e.stderr ?? e.message}`</span>; }
+};
+
+<span class="c">// pull the plain-text blocks out of a model response</span>
+<span class="k">const</span> <span class="f">textOf</span> = (m: Anthropic.Message): <span class="k">string</span> =&gt;
+  m.content.filter(b =&gt; b.type === <span class="s">"text"</span>).map(b =&gt; (b <span class="k">as</span> <span class="k">any</span>).text).join(<span class="s">"\n"</span>);</pre>
+    </section>
+
+    <!-- 19: step 2 state -->
+    <section class="slide top">
+      <p class="eyebrow">Tutorial</p>
+      <h2><span class="step-no">STEP 2</span> Durable state on disk</h2>
+      <p class="cap">The whole point: state survives a context reset because it lives in <code>progress.json</code> and git, not in the window.</p>
+<pre class="sm"><span class="k">type</span> Feature = { id: <span class="k">string</span>; title: <span class="k">string</span>; done: <span class="k">boolean</span> };
+<span class="k">type</span> State   = { goal: <span class="k">string</span>; features: Feature[]; notes: <span class="k">string</span>[] };
+
+<span class="k">const</span> STATE_FILE = <span class="s">"progress.json"</span>;
+<span class="k">const</span> <span class="f">loadState</span> = (): State =&gt; JSON.parse(readFileSync(STATE_FILE, <span class="s">"utf8"</span>));
+<span class="k">const</span> <span class="f">saveState</span> = (s: State) =&gt; writeFileSync(STATE_FILE, JSON.stringify(s, <span class="k">null</span>, <span class="s">2</span>));
+
+<span class="k">function</span> <span class="f">saveProgress</span>(note: <span class="k">string</span>): <span class="k">string</span> {
+  <span class="k">const</span> s = <span class="f">loadState</span>(); s.notes.push(note); <span class="f">saveState</span>(s);
+  <span class="f">sh</span>(<span class="s">`git add -A &amp;&amp; git commit -q -m ${JSON.stringify(<span class="s">"checkpoint: "</span> + note)} || true`</span>);
+  <span class="k">return</span> <span class="s">"progress saved + committed"</span>;
+}
+<span class="k">function</span> <span class="f">markDone</span>(id: <span class="k">string</span>): <span class="k">string</span> {
+  <span class="k">const</span> s = <span class="f">loadState</span>(); <span class="k">const</span> f = s.features.find(f =&gt; f.id === id);
+  <span class="k">if</span> (!f) <span class="k">return</span> <span class="s">`no feature ${id}`</span>;
+  f.done = <span class="k">true</span>; <span class="f">saveState</span>(s); <span class="k">return</span> <span class="s">`marked ${id} done`</span>;
+}
+<span class="c">// evaluator gaps (Step 7) re-enter the feature list here</span>
+<span class="k">function</span> <span class="f">reopenFeatures</span>(gaps: <span class="k">string</span>[]): <span class="k">void</span> {
+  <span class="k">const</span> s = <span class="f">loadState</span>();
+  gaps.forEach((g, i) =&gt; s.features.push({ id: <span class="s">`fix-${s.features.length + i}`</span>, title: g, done: <span class="k">false</span> }));
+  <span class="f">saveState</span>(s);
+}</pre>
+    </section>
+
+    <!-- 20: step 3 tool schemas -->
+    <section class="slide top">
+      <p class="eyebrow">Tutorial</p>
+      <h2><span class="step-no">STEP 3</span> Declare the tools (the hands)</h2>
+      <p class="cap">Tools are the only way the model touches the world. Five are enough to build and verify a service.</p>
+<pre class="sm"><span class="k">const</span> tools: Anthropic.Tool[] = [
+  { name: <span class="s">"read_file"</span>,  description: <span class="s">"Read a file from the project"</span>,
+    input_schema: { type: <span class="s">"object"</span>, properties: { path: { type: <span class="s">"string"</span> } }, required: [<span class="s">"path"</span>] } },
+  { name: <span class="s">"write_file"</span>, description: <span class="s">"Create or overwrite a file"</span>,
+    input_schema: { type: <span class="s">"object"</span>, properties: { path: { type: <span class="s">"string"</span> }, content: { type: <span class="s">"string"</span> } },
+      required: [<span class="s">"path"</span>, <span class="s">"content"</span>] } },
+  { name: <span class="s">"run_bash"</span>,   description: <span class="s">"Run a shell command (build, start server, curl it)"</span>,
+    input_schema: { type: <span class="s">"object"</span>, properties: { cmd: { type: <span class="s">"string"</span> } }, required: [<span class="s">"cmd"</span>] } },
+  { name: <span class="s">"update_progress"</span>,   description: <span class="s">"Note progress and commit"</span>,
+    input_schema: { type: <span class="s">"object"</span>, properties: { note: { type: <span class="s">"string"</span> } }, required: [<span class="s">"note"</span>] } },
+  { name: <span class="s">"mark_feature_done"</span>, description: <span class="s">"Mark one feature id complete"</span>,
+    input_schema: { type: <span class="s">"object"</span>, properties: { id: { type: <span class="s">"string"</span> } }, required: [<span class="s">"id"</span>] } },
+];</pre>
+    </section>
+
+    <!-- 21: step 4 dispatch -->
+    <section class="slide top">
+      <p class="eyebrow">Tutorial</p>
+      <h2><span class="step-no">STEP 4</span> Route tool calls to real code</h2>
+      <p class="cap">One switch maps each tool name to an actual effect, reusing the Step 1-2 helpers. This is where "decide" becomes "act."</p>
+<pre class="sm"><span class="k">async function</span> <span class="f">dispatchTool</span>(name: <span class="k">string</span>, input: <span class="k">any</span>): Promise&lt;<span class="k">string</span>&gt; {
+  <span class="k">switch</span> (name) {
+    <span class="k">case</span> <span class="s">"read_file"</span>:
+      <span class="k">return</span> existsSync(input.path) ? readFileSync(input.path, <span class="s">"utf8"</span>) : <span class="s">`no file ${input.path}`</span>;
+    <span class="k">case</span> <span class="s">"write_file"</span>:
+      writeFileSync(input.path, input.content); <span class="k">return</span> <span class="s">`wrote ${input.path}`</span>;
+    <span class="k">case</span> <span class="s">"run_bash"</span>:
+      <span class="k">return</span> <span class="f">sh</span>(input.cmd);
+    <span class="k">case</span> <span class="s">"update_progress"</span>:
+      <span class="k">return</span> <span class="f">saveProgress</span>(input.note);
+    <span class="k">case</span> <span class="s">"mark_feature_done"</span>:
+      <span class="k">return</span> <span class="f">markDone</span>(input.id);
+    <span class="k">default</span>:
+      <span class="k">return</span> <span class="s">`unknown tool: ${name}`</span>;
+  }
+}</pre>
+    </section>
+
+    <!-- 22: step 5 loop -->
+    <section class="slide top">
+      <p class="eyebrow">Tutorial</p>
+      <h2><span class="step-no">STEP 5</span> The agent loop</h2>
+      <p class="cap">The engine from slide 5, in code: call the model, run whatever tools it asked for, feed results back, repeat until it stops or hits the turn budget.</p>
+<pre class="sm"><span class="k">async function</span> <span class="f">runAgentLoop</span>(
+  system: <span class="k">string</span>, messages: Anthropic.MessageParam[], maxTurns = <span class="s">60</span>,
+): Promise&lt;Anthropic.Message&gt; {
+  <span class="k">let</span> last!: Anthropic.Message;
+  <span class="k">for</span> (<span class="k">let</span> turn = <span class="s">0</span>; turn &lt; maxTurns; turn++) {
+    last = <span class="k">await</span> client.messages.create({ model: MODEL, max_tokens: <span class="s">8192</span>, system, tools, messages });
+    messages.push({ role: <span class="s">"assistant"</span>, content: last.content });
+    <span class="k">if</span> (last.stop_reason !== <span class="s">"tool_use"</span>) <span class="k">break</span>;          <span class="c">// model is done thinking</span>
+
+    <span class="k">const</span> results: Anthropic.ToolResultBlockParam[] = [];
+    <span class="k">for</span> (<span class="k">const</span> b <span class="k">of</span> last.content) {
+      <span class="k">if</span> (b.type !== <span class="s">"tool_use"</span>) <span class="k">continue</span>;
+      results.push({ type: <span class="s">"tool_result"</span>, tool_use_id: b.id, content: <span class="k">await</span> <span class="f">dispatchTool</span>(b.name, b.input) });
+    }
+    messages.push({ role: <span class="s">"user"</span>, content: results });            <span class="c">// observation back into context</span>
+  }
+  <span class="k">return</span> last;
+}</pre>
+    </section>
+
+    <!-- 23: step 6 worker + handoff + reset -->
+    <section class="slide top">
+      <p class="eyebrow">Tutorial</p>
+      <h2><span class="step-no">STEP 6</span> Worker prompt, handoff, reset</h2>
+      <p class="cap">Each <code>session()</code> is a fresh window. <code>build()</code> keeps spawning sessions until every feature is done: that is the reset-and-handoff outer loop.</p>
+<pre class="sm"><span class="k">const</span> SYSTEM = <span class="s">`You are a coding agent resuming a long task.
+First, read progress.json and run \`git log --oneline\`.
+Pick the SINGLE highest-priority unfinished feature.
+Implement it, run the server and curl it to prove it works, commit,
+then call mark_feature_done. Do NOT try to build everything at once.`</span>;
+
+<span class="k">const</span> <span class="f">handoffPrompt</span> = (s: State): <span class="k">string</span> =&gt;
+  <span class="s">`Goal: ${s.goal}\n`</span> +
+  <span class="s">`Unfinished: ${s.features.filter(f =&gt; !f.done).map(f =&gt; <span class="s">`[${f.id}] ${f.title}`</span>).join(<span class="s">"; "</span>)}\n`</span> +
+  <span class="s">`Recent commits:\n${<span class="f">sh</span>(<span class="s">"git log --oneline -8"</span>)}`</span>;
+
+<span class="k">async function</span> <span class="f">session</span>(): Promise&lt;<span class="s">"more"</span> | <span class="s">"complete"</span>&gt; {
+  <span class="k">const</span> s = <span class="f">loadState</span>();
+  <span class="k">if</span> (s.features.every(f =&gt; f.done)) <span class="k">return</span> <span class="s">"complete"</span>;
+  <span class="k">await</span> <span class="f">runAgentLoop</span>(SYSTEM, [{ role: <span class="s">"user"</span>, content: <span class="f">handoffPrompt</span>(s) }], <span class="s">40</span>);
+  <span class="k">return</span> <span class="s">"more"</span>;                                  <span class="c">// window ends; state is on disk</span>
+}
+<span class="k">async function</span> <span class="f">build</span>(): Promise&lt;<span class="k">void</span>&gt; {
+  <span class="k">while</span> ((<span class="k">await</span> <span class="f">session</span>()) === <span class="s">"more"</span>) console.log(<span class="s">"&#8635; reset &rarr; fresh session, state reloaded"</span>);
+}</pre>
+    </section>
+
+    <!-- 24: step 7 evaluator -->
+    <section class="slide top">
+      <p class="eyebrow">Tutorial</p>
+      <h2><span class="step-no">STEP 7</span> An independent evaluator</h2>
+      <p class="cap">A second agent with its own criteria probes the running service and returns JSON. Its gaps feed back through <code>reopenFeatures()</code> from Step 2.</p>
+<pre class="sm"><span class="k">const</span> CRITERIA = [<span class="s">"functionality"</span>, <span class="s">"error handling"</span>, <span class="s">"code clarity"</span>];
+
+<span class="k">async function</span> <span class="f">evaluate</span>(): Promise&lt;{ pass: <span class="k">boolean</span>; gaps: <span class="k">string</span>[] }&gt; {
+  <span class="k">const</span> res = <span class="k">await</span> <span class="f">runAgentLoop</span>(
+    <span class="s">`You are an INDEPENDENT evaluator. Start the server with run_bash and probe it
+     with curl (POST /shorten, follow a redirect, hit an unknown code).
+     Grade it on: ${CRITERIA.join(<span class="s">", "</span>)}.
+     Reply with ONLY JSON: {"pass": boolean, "gaps": string[]}.`</span>,
+    [{ role: <span class="s">"user"</span>, content: <span class="s">"Evaluate the current build against the goal in progress.json."</span> }],
+  );
+  <span class="k">try</span> { <span class="k">return</span> JSON.parse(<span class="f">textOf</span>(res).match(<span class="s">/\{[\s\S]*\}/</span>)?.[<span class="s">0</span>] ?? <span class="s">"{}"</span>); }
+  <span class="k">catch</span> { <span class="k">return</span> { pass: <span class="k">false</span>, gaps: [<span class="s">"evaluator output was not valid JSON"</span>] }; }
+}</pre>
+    </section>
+
+    <!-- 25: step 8 seed + main -->
+    <section class="slide top">
+      <p class="eyebrow">Tutorial</p>
+      <h2><span class="step-no">STEP 8</span> Seed the spec, then tie it together</h2>
+      <p class="cap"><code>seed()</code> writes the feature list on the first run (the "initializer"). <code>main()</code> alternates build and evaluate until it passes.</p>
+<pre class="sm"><span class="k">function</span> <span class="f">seed</span>() {
+  <span class="k">const</span> state: State = {
+    goal: <span class="s">"URL shortener in plain Node: POST /shorten {url}-&gt;{code}, GET /:code -&gt; 302 redirect."</span>,
+    features: [
+      { id: <span class="s">"f1"</span>, title: <span class="s">"HTTP server on PORT with a small router"</span>, done: <span class="k">false</span> },
+      { id: <span class="s">"f2"</span>, title: <span class="s">"POST /shorten stores the url, returns a short code"</span>, done: <span class="k">false</span> },
+      { id: <span class="s">"f3"</span>, title: <span class="s">"GET /:code 302-redirects to the original url"</span>, done: <span class="k">false</span> },
+      { id: <span class="s">"f4"</span>, title: <span class="s">"persist code-&gt;url map to store.json"</span>, done: <span class="k">false</span> },
+      { id: <span class="s">"f5"</span>, title: <span class="s">"404 unknown code, 400 bad input"</span>, done: <span class="k">false</span> },
+    ], notes: [],
+  };
+  <span class="f">saveState</span>(state);
+  <span class="f">sh</span>(<span class="s">"git init -q &amp;&amp; git add -A &amp;&amp; git commit -q -m 'seed: spec + progress'"</span>);
+}
+
+<span class="k">async function</span> <span class="f">main</span>() {
+  <span class="k">if</span> (!existsSync(STATE_FILE)) <span class="f">seed</span>();             <span class="c">// run 1 only</span>
+  <span class="k">for</span> (<span class="k">let</span> round = <span class="s">1</span>; round &lt;= <span class="s">5</span>; round++) {
+    <span class="k">await</span> <span class="f">build</span>();                              <span class="c">// worker: build until all features done</span>
+    <span class="k">const</span> v = <span class="k">await</span> <span class="f">evaluate</span>();                   <span class="c">// independent QA</span>
+    console.log(<span class="s">`round ${round}: ${v.pass ? <span class="s">"PASS"</span> : <span class="s">"gaps -&gt; "</span> + v.gaps.join(<span class="s">", "</span>)}`</span>);
+    <span class="k">if</span> (v.pass) <span class="k">return</span>;
+    <span class="f">reopenFeatures</span>(v.gaps);                      <span class="c">// gaps become new features, loop again</span>
+  }
+}
+<span class="f">main</span>();   <span class="c">// run:  ANTHROPIC_API_KEY=... npx tsx harness.ts</span></pre>
+    </section>
+
+    <!-- 26: close + references -->
+    <section class="slide">
+      <p class="eyebrow">Where to go next</p>
+      <h2>You just built every core piece</h2>
+      <ul style="font-size:1.05em;">
+        <li>You have the <strong>loop</strong>, <strong>tools</strong>, <strong>durable state</strong>, <strong>reset/handoff</strong>, and an <strong>independent evaluator</strong>. That is a real harness.</li>
+        <li>Level it up: run tools in a real <strong>sandbox</strong>, add tools over <strong>MCP</strong>, keep an append-only <strong>session log</strong>, parallelize workers, add <strong>guides and sensors</strong> (linters, type checks) as you hit recurring failures.</li>
+        <li>Keep it minimal. Delete any piece the model stops needing.</li>
+      </ul>
+      <p class="ref" style="margin-top:1.3em;font-size:0.95em;line-height:1.9;">
+        <b>References</b><br>
+        <a>anthropic.com/engineering/effective-harnesses-for-long-running-agents</a><br>
+        <a>anthropic.com/engineering/harness-design-long-running-apps</a><br>
+        <a>anthropic.com/engineering/managed-agents</a><br>
+        <a>openai.com/index/harness-engineering</a><br>
+        <a>martinfowler.com/articles/harness-engineering.html</a>
+      </p>
+    </section>
+
+    <!-- 27 -->
+    <section class="slide">
+      <p class="eyebrow">Wrap</p>
+      <h2>A harness turns a model into a worker</h2>
+      <ul>
+        <li>One-shot answers. Chains run a script. A <strong>harness gives the model a loop, tools, memory, and a way to recover.</strong></li>
+        <li>It buys you <strong>long, open-ended, real-world</strong> work that a single call cannot do.</li>
+        <li>Build the smallest one that works, prove each part earns its place, and strip it back as the model grows.</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <div class="footer">What is a harness?</div>
+  <div class="nav"><span id="cur">1</span> / <span id="tot">29</span> &nbsp; &larr; &rarr;</div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const cur = document.getElementById('cur');
+    const tot = document.getElementById('tot');
+    tot.textContent = slides.length;
+    let i = 0;
+    function show(n) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach((s, idx) => s.classList.toggle('active', idx === i));
+      cur.textContent = i + 1;
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); show(i + 1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(i - 1); }
+      else if (e.key === 'Home') { show(0); }
+      else if (e.key === 'End') { show(slides.length - 1); }
+    });
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('a, code, pre')) { return; }
+      if (e.clientX > window.innerWidth / 2) { show(i + 1); }
+      else { show(i - 1); }
+    });
+  </script>
+</body>
+</html>
